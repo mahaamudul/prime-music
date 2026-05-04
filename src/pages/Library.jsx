@@ -1,0 +1,12 @@
+import React from 'react';
+
+const Library = () => {
+  return (
+    <div className="text-center py-20">
+      <h1 className="text-3xl font-bold text-white mb-4">Library</h1>
+      <p className="text-[#A0A0A0]">Coming soon...</p>
+    </div>
+  );
+};
+
+export default Library;
