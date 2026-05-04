@@ -13,19 +13,19 @@ const SongListContainer = ({ songs, title = 'Feel Good Indie', theme = 'gray' })
 
   return (
     <div
-      className="rounded-xl p-4 w-80 flex-shrink-0 flex flex-col h-80 overflow-hidden"
+      className="rounded-xl p-4 w-80 md:w-[340px] flex-shrink-0 flex flex-col h-80 md:h-[22rem] overflow-hidden"
       style={{ backgroundImage: gradients[theme] || gradients.gray }}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-white text-[15px] font-semibold truncate">{title}</h3>
-        <button className="text-white text-[12px] font-normal hover:text-white/80 transition">
+        <button className="text-white text-[12px] font-normal transition">
           View All
         </button>
       </div>
 
       {/* Song List - Vertical Scroll */}
-      <div className="flex-1 overflow-y-auto mb-3 space-y-2 pr-1">
+      <div className="flex-1 overflow-y-auto scrollbar-hide mb-3 space-y-2 pr-1">
         {songs.slice(0, 6).map((song) => (
           <SongItem key={song.id} song={song} />
         ))}
@@ -42,13 +42,13 @@ const SongListContainer = ({ songs, title = 'Feel Good Indie', theme = 'gray' })
             className={`transition ${
               isLiked
                 ? 'fill-[#ff5353] text-[#ff5353]'
-                : 'text-white/70 fill-none hover:text-[#ff5353]'
+                : 'text-white/70 fill-none'
             }`}
           />
         </button>
 
         {/* Play Button */}
-        <button className="w-12 h-12 bg-[#ff5353] rounded-full shadow-lg hover:bg-[#ff6b6b] transition flex items-center justify-center">
+        <button className="w-12 h-12 bg-[#ff5353] rounded-full shadow-lg transition flex items-center justify-center">
           <Play size={20} className="text-white fill-white" />
         </button>
       </div>

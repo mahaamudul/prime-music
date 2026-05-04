@@ -3,6 +3,8 @@ import Header from './Header';
 import BottomNavigation from './BottomNavigation';
 import SearchModal from '../Common/SearchModal';
 import SidePanel from './SidePanel';
+import DesktopSidebar from './DesktopSidebar';
+import DesktopTopBar from './DesktopTopBar';
 
 const Layout = ({ children }) => {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -28,27 +30,36 @@ const Layout = ({ children }) => {
 
   return (
     <div className="bg-[#020e28] min-h-screen text-white">
-      <Header
-        onSearchClick={() => setSearchOpen(true)}
-        onProfileClick={() => setSidePanelOpen(true)}
-      />
+      <div className="md:hidden">
+        <Header
+          onSearchClick={() => setSearchOpen(true)}
+          onProfileClick={() => setSidePanelOpen(true)}
+        />
+      </div>
+
+      <div className="hidden md:block">
+        <DesktopSidebar />
+        <DesktopTopBar />
+      </div>
       
       {/* Main content area with padding for fixed header and nav */}
-      <main className="pt-20 pb-24 mx-auto max-w-2xl">
+      <main className="pt-20 pb-24 mx-auto max-w-2xl md:max-w-none md:mx-0 md:pt-24 md:pb-8 md:pl-72 md:pr-6">
         {children}
       </main>
 
-      <BottomNavigation />
+      <div className="md:hidden">
+        <BottomNavigation />
+      </div>
 
       <SidePanel
         open={sidePanelOpen}
         onClose={() => setSidePanelOpen(false)}
       />
       
-      {/* Search Modal */}
-      {searchOpen && (
-        <SearchModal onClose={() => setSearchOpen(false)} />
-      )}
+      {/* Search Modal (mobile only) */}
+      <div className="md:hidden">
+        {searchOpen && <SearchModal onClose={() => setSearchOpen(false)} />}
+      </div>
     </div>
   );
 };

@@ -22,7 +22,7 @@ const SongItem = ({ song }) => {
       </div>
 
       {/* Right: Three-dot menu */}
-      <button className="text-white/60 hover:text-white transition flex-shrink-0">
+      <button className="text-white/60 transition flex-shrink-0">
         <MoreVertical size={18} />
       </button>
     </div>

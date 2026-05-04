@@ -60,7 +60,7 @@ const SidePanel = ({ open, onClose }) => {
 
   return (
     <div
-      className={`fixed inset-0 z-50 mx-auto max-w-2xl transition-opacity duration-200 ease-out ${
+      className={`fixed inset-0 z-50 transition-opacity duration-200 ease-out ${
         open ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
       }`}
     >
@@ -76,7 +76,7 @@ const SidePanel = ({ open, onClose }) => {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        className={`absolute left-0 top-0 h-full w-[84vw] max-w-[340px] bg-[#020e28]/78 backdrop-blur-2xl border-r border-white/10 shadow-2xl transition-transform duration-200 ease-out will-change-transform ${
+        className={`absolute left-0 top-0 h-full w-[84vw] max-w-[340px] md:w-[380px] bg-[#020e28]/78 backdrop-blur-2xl border-r border-white/10 shadow-2xl transition-transform duration-200 ease-out will-change-transform ${
           open && !closing ? 'translate-x-0' : '-translate-x-full'
         }`}
       >

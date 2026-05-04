@@ -11,7 +11,7 @@ const Header = ({ onSearchClick, onProfileClick }) => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 bg-[#020e28] z-40 mx-auto max-w-2xl">
+    <header className="fixed top-0 left-0 right-0 bg-[#020e28] z-40 mx-auto max-w-2xl md:hidden">
       <div className="flex items-center justify-between px-4 py-3 h-16">
         <div className="flex items-center gap-3">
           {/* Profile Icon */}

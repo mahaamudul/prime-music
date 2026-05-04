@@ -39,10 +39,10 @@ const Home = () => {
 
       {/* Just Arrived Section */}
       <Section title="Just Arrived" titleWeight="light">
-        <HorizontalScroll>
-          <SongListContainer songs={songs} theme="gray" />
-          <SongListContainer songs={songs} theme="red" />
-          <SongListContainer songs={songs} theme="purple" />
+        <HorizontalScroll showIndicator={false}>
+          <SongListContainer songs={songs.slice(0, 8)} theme="gray" title="Feel Good Indie" />
+          <SongListContainer songs={songs.slice(8, 16)} theme="red" title="Hot Hits" />
+          <SongListContainer songs={songs.slice(16, 24)} theme="purple" title="New Vibes" />
         </HorizontalScroll>
       </Section>
 

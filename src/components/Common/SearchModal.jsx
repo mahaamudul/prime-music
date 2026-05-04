@@ -5,8 +5,8 @@ const SearchModal = ({ onClose }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   return (
-    <div className="fixed inset-0 bg-black/80 z-50 flex items-end max-w-2xl mx-auto">
-      <div className="w-full bg-[#1A1F2E] rounded-t-3xl p-4">
+    <div className="fixed inset-0 z-50 flex items-end bg-black/80 md:items-center md:justify-center">
+      <div className="w-full bg-[#1A1F2E] rounded-t-3xl p-4 md:w-[720px] md:max-w-[92vw] md:rounded-3xl md:p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-[22px] leading-tight font-bold text-white">Search</h2>
