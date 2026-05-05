@@ -1,13 +1,13 @@
 import React from 'react';
 
-const Section = ({ title, onViewAll, children, titleWeight = 'bold' }) => {
+const Section = ({ title, onViewAll, children, titleWeight = 'bold', showDivider = true }) => {
   const titleClassName =
     titleWeight === 'light'
       ? 'text-[22px] leading-tight font-normal text-white/70'
       : 'text-[22px] leading-tight font-bold text-white';
 
   return (
-    <section className="mb-6">
+    <section className={`mb-6 ${showDivider ? 'pb-6 border-b border-white/5' : ''}`}>
       {/* Section Header */}
       <div className="flex items-center justify-between px-4 mb-4">
         <h2 className={titleClassName}>{title}</h2>

@@ -1,13 +1,24 @@
 import React from 'react';
 import { Play } from 'lucide-react';
 
-const PlaylistCard = ({ playlist, variant = 'default' }) => {
+const PlaylistCard = ({ playlist, variant = 'default', onClick }) => {
   const isLarge = variant === 'large';
 
   return (
-    <div className={`cursor-pointer transition ${
+    <div
+      className={`cursor-pointer transition ${
       isLarge ? 'w-40 md:w-56 flex-shrink-0' : 'w-40 md:w-52 flex-shrink-0'
-    }`}>
+    }`}
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if ((event.key === 'Enter' || event.key === ' ') && onClick) {
+          event.preventDefault();
+          onClick();
+        }
+      }}
+    >
       <div className={`group relative overflow-hidden rounded-xl aspect-square ${
         isLarge ? 'border-[8px] border-white rounded-xl' : ''
       }`}>

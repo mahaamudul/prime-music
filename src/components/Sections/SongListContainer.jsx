@@ -8,13 +8,22 @@ const gradients = {
   purple: 'linear-gradient(135deg, rgba(148, 115, 214, 0.95) 0%, rgba(53, 26, 92, 0.98) 100%)',
 };
 
-const SongListContainer = ({ songs, title = 'Feel Good Indie', theme = 'gray' }) => {
+const SongListContainer = ({ songs, title = 'Feel Good Indie', theme = 'gray', onClick }) => {
   const [isLiked, setIsLiked] = useState(false);
 
   return (
     <div
-      className="rounded-xl p-4 w-80 md:w-[340px] flex-shrink-0 flex flex-col h-80 md:h-[22rem] overflow-hidden"
+      className="rounded-xl p-4 w-80 md:w-[340px] flex-shrink-0 flex flex-col h-80 md:h-[22rem] overflow-hidden cursor-pointer"
       style={{ backgroundImage: gradients[theme] || gradients.gray }}
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if ((event.key === 'Enter' || event.key === ' ') && onClick) {
+          event.preventDefault();
+          onClick();
+        }
+      }}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
@@ -35,7 +44,10 @@ const SongListContainer = ({ songs, title = 'Feel Good Indie', theme = 'gray' })
       <div className="flex items-center justify-between">
         {/* Heart Icon */}
         <button
-          onClick={() => setIsLiked(!isLiked)}
+          onClick={(event) => {
+            event.stopPropagation();
+            setIsLiked(!isLiked);
+          }}
         >
           <Heart
             size={24}
@@ -48,7 +60,10 @@ const SongListContainer = ({ songs, title = 'Feel Good Indie', theme = 'gray' })
         </button>
 
         {/* Play Button */}
-        <button className="w-12 h-12 bg-[#ff5353] rounded-full shadow-lg transition flex items-center justify-center">
+        <button
+          className="w-12 h-12 bg-[#ff5353] rounded-full shadow-lg transition flex items-center justify-center"
+          onClick={(event) => event.stopPropagation()}
+        >
           <Play size={20} className="text-white fill-white" />
         </button>
       </div>
