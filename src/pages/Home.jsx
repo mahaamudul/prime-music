@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Section from '../components/Sections/Section';
 import HorizontalScroll from '../components/Sections/HorizontalScroll';
@@ -12,8 +12,7 @@ const Home = () => {
   const [homeSections, setHomeSections] = useState([]);
   const [requestState, setRequestState] = useState('loading');
   const [errorMessage, setErrorMessage] = useState('');
-  const HOME_API_URL = import.meta.env.VITE_HOME_API_URL || '/api/vv1/home';
-  const HOME_FALLBACK_URL = `${import.meta.env.BASE_URL}data.json`;
+  const HOME_API_URL = import.meta.env.VITE_HOME_API_URL || 'http://31.97.110.129:7001/api/vv1/home';
 
   const fetchJson = async (url, signal) => {
     const response = await fetch(url, { signal });
@@ -32,7 +31,9 @@ const Home = () => {
     try {
       return JSON.parse(text);
     } catch (parseError) {
-      throw new Error(`Invalid JSON from ${url}: ${parseError.message}`);
+      const error = new Error(`Invalid JSON from ${url}: ${parseError.message}`);
+      error.cause = parseError;
+      throw error;
     }
   };
 
@@ -41,14 +42,7 @@ const Home = () => {
     setErrorMessage('');
 
     try {
-      let json;
-
-      try {
-        json = await fetchJson(HOME_API_URL, signal);
-      } catch (primaryError) {
-        console.warn('Primary home API failed, using fallback data:', primaryError);
-        json = await fetchJson(HOME_FALLBACK_URL, signal);
-      }
+      const json = await fetchJson(HOME_API_URL, signal);
 
       if (json?.data?.status === false) {
         throw new Error(json?.data?.message || 'API returned an unsuccessful response');
@@ -67,11 +61,15 @@ const Home = () => {
       setErrorMessage(error?.message || 'Failed to load home data');
       setRequestState('error');
     }
-  }, []);
+  }, [HOME_API_URL]);
 
   useEffect(() => {
     const controller = new AbortController();
-    loadHomeData(controller.signal);
+    Promise.resolve().then(() => {
+      if (!controller.signal.aborted) {
+        loadHomeData(controller.signal);
+      }
+    });
 
     return () => {
       controller.abort();
@@ -94,10 +92,46 @@ const Home = () => {
 
   const handleItemClick = (item, section) => {
     const redirectType = item?.redirectType;
+    
+    if (redirectType === 'playlist') {
+      navigate(`/playlist/${item.id}`, {
+        state: {
+          redirectType,
+          item: {
+            id: item.id,
+            title: item.title,
+            image: item.image,
+            dominant_color: item.dominant_color,
+            redirectType: redirectType,
+            songs: item.songs || [],
+          },
+          section,
+        },
+      });
+      return;
+    }
+
+    if (redirectType === 'album') {
+      navigate('/explore', {
+        state: {
+          redirectType,
+          item: {
+            id: item.id,
+            title: item.title,
+            image: item.image,
+            dominant_color: item.dominant_color,
+            redirectType: redirectType,
+            songs: item.songs || [],
+          },
+          section,
+        },
+      });
+      return;
+    }
+
+    // For artists and other types
     const routeByType = {
       artist: '/explore',
-      playlist: '/library',
-      album: '/library',
       shorts: '/explore',
     };
 

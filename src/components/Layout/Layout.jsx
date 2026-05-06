@@ -5,6 +5,7 @@ import SearchModal from '../Common/SearchModal';
 import SidePanel from './SidePanel';
 import DesktopSidebar from './DesktopSidebar';
 import DesktopTopBar from './DesktopTopBar';
+import MiniPlayer from '../Common/MiniPlayer';
 
 const Layout = ({ children }) => {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -50,6 +51,9 @@ const Layout = ({ children }) => {
       <div className="md:hidden">
         <BottomNavigation />
       </div>
+
+      {/* Mini Player */}
+      <MiniPlayer />
 
       <SidePanel
         open={sidePanelOpen}

@@ -8,7 +8,13 @@ import {
   PencilLine,
   Settings2,
   Users,
+  Home,
+  Compass,
+  Crown,
+  Library,
+  Search,
 } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
 
 const menuItems = [
   { icon: CirclePlus, label: 'Add account' },
@@ -16,6 +22,13 @@ const menuItems = [
   { icon: Clock3, label: 'Recents' },
   { icon: MessageSquareText, label: 'Your Updates' },
   { icon: Settings2, label: 'Settings and privacy' },
+];
+
+const navItems = [
+  { label: 'Home', path: '/', icon: Home },
+  { label: 'Explore', path: '/explore', icon: Compass },
+  { label: 'Premium', path: '/premium', icon: Crown },
+  { label: 'Library', path: '/library', icon: Library },
 ];
 
 const SidePanel = ({ open, onClose }) => {
@@ -76,9 +89,10 @@ const SidePanel = ({ open, onClose }) => {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        className={`absolute left-0 top-0 h-full w-[84vw] max-w-[340px] md:w-[380px] bg-[#020e28]/78 backdrop-blur-2xl border-r border-white/10 shadow-2xl transition-transform duration-200 ease-out will-change-transform ${
+        className={`absolute left-0 top-0 h-full w-[84vw] md:w-[24rem] bg-[#020e28]/78 backdrop-blur-2xl border-r border-white/10 shadow-2xl transition-transform duration-200 ease-out will-change-transform ${
           open && !closing ? 'translate-x-0' : '-translate-x-full'
         }`}
+        style={{ maxWidth: 340 }}
       >
         <div className="h-full overflow-y-auto pb-6">
           <div className="px-5 pt-4 pb-5">
@@ -102,6 +116,27 @@ const SidePanel = ({ open, onClose }) => {
             </div>
 
             <div className="space-y-6 border-t border-white/10 pt-5">
+              <div className="space-y-2 mb-3">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <NavLink
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => onClose()}
+                      className={({ isActive }) =>
+                        `flex items-center gap-4 rounded-xl px-3 py-2 text-[16px] font-medium transition ${
+                          isActive ? 'bg-white/10 text-white' : 'text-white/70'
+                        }`
+                      }
+                    >
+                      <Icon size={20} />
+                      <span>{item.label}</span>
+                    </NavLink>
+                  );
+                })}
+              </div>
+
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -141,7 +176,7 @@ const SidePanel = ({ open, onClose }) => {
                   <PencilLine size={24} />
                 </div>
               </div>
-              <p className="text-white/55 text-[15px] leading-snug max-w-[240px]">
+              <p className="text-white/55 text-[15px] leading-snug" style={{ maxWidth: 240 }}>
                 Share what you love with friends, directly on Spotify.
               </p>
 
