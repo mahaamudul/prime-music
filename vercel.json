@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/audio-proxy",
+      "destination": "/api/audio-proxy"
+    },
+    {
       "source": "/api/:path*",
       "destination": "http://31.97.110.129:7001/api/:path*"
     }
