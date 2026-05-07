@@ -295,7 +295,7 @@ const Explore = () => {
         {visibleBrowseItems.length === 0 ? (
           <div className="text-white/60 py-8">No items available</div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 gap-4 justify-items-center md:grid-cols-3 md:justify-items-start lg:grid-cols-4 xl:grid-cols-5">
             {visibleBrowseItems.map((item) => (
               <PlaylistCard
                 key={item.id}

@@ -164,3 +164,12 @@ body {
   flex-direction: column;
   box-sizing: border-box;
 }
+
+/* Prevent accidental page-level horizontal scroll on phones */
+@media (max-width: 767px) {
+  html,
+  body,
+  #root {
+    overflow-x: hidden;
+  }
+}
