@@ -1,19 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
-import {
-  Play,
-  Pause,
-  SkipBack,
-  SkipForward,
-  Volume2,
-  VolumeX,
-  Music,
-  Heart,
-  MoreVertical,
-  Repeat,
-  Shuffle,
-  MoonStar,
-} from 'lucide-react';
+import { Play, Pause, Music, SkipBack, SkipForward, Volume2, VolumeX, Shuffle, Repeat, Heart, List } from 'lucide-react';
 import { MusicPlayerContext } from '../../contexts/MusicPlayerContext';
+import MarqueeText from './MarqueeText';
 
 const decodeHtmlEntities = (value) => {
   if (!value) return '';
@@ -29,9 +17,7 @@ const decodeHtmlEntities = (value) => {
 const resolveAudioUrl = (filePath) => {
   const normalizedUrl = decodeHtmlEntities(filePath);
 
-  if (!normalizedUrl) {
-    return '';
-  }
+  if (!normalizedUrl) return '';
 
   return `/audio-proxy?url=${encodeURIComponent(normalizedUrl)}`;
 };
@@ -39,142 +25,99 @@ const resolveAudioUrl = (filePath) => {
 const MiniPlayer = () => {
   const {
     currentSong,
-    collection,
     isPlaying,
     currentTime,
     duration,
-    bufferedTime,
     pauseSong,
     resumeSong,
-    nextSong,
-    previousSong,
     setTime,
     setDurationValue,
-    isShuffling,
-    repeatMode,
+    audioRef,
+    nextSong,
+    previousSong,
     volume,
     isMuted,
+  } = useContext(MusicPlayerContext);
+  const {
     toggleShuffle,
     cycleRepeatMode,
+    isShuffling,
+    repeatMode,
     setVolumeValue,
     toggleMute,
-    setSleepTimerMinutes,
-    audioRef,
+    bufferedTime,
     setBufferedValue,
   } = useContext(MusicPlayerContext);
 
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [sleepMinutes, setSleepMinutes] = useState(0);
+  const [compactMobileOpen, setCompactMobileOpen] = useState(false);
 
-  const readBufferedSeconds = (audio) => {
-    if (!audio || !audio.buffered || audio.buffered.length === 0) return 0;
+  const progressPercentage = duration > 0 ? Math.max(0, Math.min((currentTime / duration) * 100, 100)) : 0;
 
-    try {
-      return audio.buffered.end(audio.buffered.length - 1);
-    } catch {
-      return 0;
-    }
-  };
-
-  // Load the audio source only when the selected song changes.
   useEffect(() => {
-    if (!audioRef.current || !currentSong?.file_path) {
-      return;
-    }
-
+    if (!audioRef.current || !currentSong?.file_path) return;
     const audio = audioRef.current;
-    const nextAudioUrl = resolveAudioUrl(currentSong.file_path);
+    const nextSrc = resolveAudioUrl(currentSong.file_path);
 
-    if (nextAudioUrl && audio.src !== nextAudioUrl) {
-      audio.src = nextAudioUrl;
+    if (nextSrc && audio.dataset.loadedSrc !== nextSrc) {
+      audio.src = nextSrc;
       audio.load();
+      audio.dataset.loadedSrc = nextSrc;
+      // reset time display on new source
+      setTime(0);
     }
 
+    audio.volume = volume;
+    audio.muted = isMuted;
+
+    const onTime = () => setTime(audio.currentTime * 1000);
+    const onLoaded = () => {
+      setDurationValue(audio.duration * 1000);
+      try {
+        const b = audio.buffered;
+        if (b && b.length) {
+          // buffered end in seconds -> convert to ms
+          setBufferedValue(b.end(b.length - 1) * 1000);
+        }
+      } catch (err) { void err; }
+    };
+    const onProgress = () => {
+      try {
+        const b = audio.buffered;
+        if (b && b.length) {
+          setBufferedValue(b.end(b.length - 1) * 1000);
+        }
+      } catch (err) { void err; }
+    };
+
+    audio.addEventListener('timeupdate', onTime);
+    audio.addEventListener('loadedmetadata', onLoaded);
+    audio.addEventListener('progress', onProgress);
+
+    // Respect the playing state explicitly
     if (isPlaying) {
       audio.play().catch((error) => {
         console.error('Audio play error:', error);
       });
+    } else {
+      try { audio.pause(); } catch (err) { void err; }
     }
-  }, [currentSong?.id, currentSong?.file_path, isPlaying, audioRef]);
-
-  // Handle volume and mute separately to avoid interrupting playback.
-  useEffect(() => {
-    if (!audioRef.current) return;
-    
-    const audio = audioRef.current;
-    audio.volume = volume;
-    audio.muted = isMuted;
-  }, [volume, isMuted, audioRef]);
-
-  // Sync time, duration, and buffered progress from the audio element.
-  useEffect(() => {
-    if (!audioRef.current) return;
-
-    const audio = audioRef.current;
-
-    const handleTimeUpdate = () => {
-      setTime(audio.currentTime * 1000);
-    };
-
-    const handleLoadedMetadata = () => {
-      setDurationValue(audio.duration * 1000);
-      setBufferedValue(readBufferedSeconds(audio) * 1000);
-      setTime(audio.currentTime * 1000);
-    };
-
-    const handleDurationChange = () => {
-      setDurationValue(audio.duration * 1000);
-    };
-
-    const handleProgress = () => {
-      setBufferedValue(readBufferedSeconds(audio) * 1000);
-    };
-
-    const handleEnded = () => {
-      console.log('Song ended, playing next');
-      if (repeatMode === 'one' && audioRef.current) {
-        audioRef.current.currentTime = 0;
-        audioRef.current.play();
-        return;
-      }
-
-      nextSong();
-    };
-
-    const handleCanPlay = () => {
-      console.log('Audio ready to play');
-    };
-
-    const handleError = (e) => {
-      console.error('Audio error:', e);
-    };
-
-    audio.addEventListener('timeupdate', handleTimeUpdate);
-    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
-    audio.addEventListener('durationchange', handleDurationChange);
-    audio.addEventListener('progress', handleProgress);
-    audio.addEventListener('ended', handleEnded);
-    audio.addEventListener('canplay', handleCanPlay);
-    audio.addEventListener('error', handleError);
 
     return () => {
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
-      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-      audio.removeEventListener('durationchange', handleDurationChange);
-      audio.removeEventListener('progress', handleProgress);
-      audio.removeEventListener('ended', handleEnded);
-      audio.removeEventListener('canplay', handleCanPlay);
-      audio.removeEventListener('error', handleError);
+      audio.removeEventListener('timeupdate', onTime);
+      audio.removeEventListener('loadedmetadata', onLoaded);
+      audio.removeEventListener('progress', onProgress);
     };
-  }, [currentSong?.id, setTime, setDurationValue, setBufferedValue, nextSong, audioRef, repeatMode]);
+  }, [audioRef, currentSong?.id, currentSong?.file_path, isPlaying, volume, isMuted, setTime, setDurationValue, setBufferedValue]);
 
-  const formatTime = (ms) => {
-    if (!ms || isNaN(ms)) return '0:00';
-    const totalSeconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
+  useEffect(() => {
+    const handler = (e) => {
+      const open = e?.detail?.open;
+      if (typeof open === 'boolean') setCompactMobileOpen(open && window.innerWidth < 768);
+    };
+
+    window.addEventListener('playlist-open', handler);
+    return () => window.removeEventListener('playlist-open', handler);
+  }, []);
 
   const handleSeekInput = (event) => {
     if (!audioRef.current || duration <= 0) return;
@@ -185,186 +128,174 @@ const MiniPlayer = () => {
 
     try {
       audio.currentTime = nextTime;
+      setTime(nextTime * 1000);
     } catch (error) {
       console.error('Audio seek error:', error);
-      return;
     }
-
-    setTime(nextTime * 1000);
   };
 
-  const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
-  const bufferedPercentage = duration > 0 ? Math.min((bufferedTime / duration) * 100, 100) : 0;
-
-  const volumeIcon = isMuted || volume === 0 ? <VolumeX size={16} className="md:w-5 md:h-5" /> : <Volume2 size={16} className="md:w-5 md:h-5" />;
-
-  const handleSleepButtonClick = () => {
-    const nextValue = sleepMinutes === 0 ? 15 : sleepMinutes === 15 ? 30 : sleepMinutes === 30 ? 60 : 0;
-    const appliedValue = setSleepTimerMinutes(nextValue);
-    setSleepMinutes(appliedValue);
-  };
-
-  if (!currentSong) {
-    return null;
-  }
+  if (!currentSong) return null;
 
   return (
     <>
-      {/* Hidden audio element */}
-      <audio 
-        ref={audioRef} 
-        preload="auto"
-      />
+      <audio ref={audioRef} preload="auto" />
 
-      {/* Mini Player */}
-      <div className="fixed bottom-20 md:bottom-0 left-0 right-0 bg-linear-to-t from-black via-black/85 to-transparent px-8 py-3 md:py-4 border-t border-white/10 z-40 pointer-events-auto">
-        {/* Progress bar */}
-        <div className="relative mb-2 group">
-          <div className="h-1 bg-white/10 rounded-full hover:h-2 transition-all overflow-hidden">
-            <div
-              className="absolute left-0 top-0 h-full bg-white/20 rounded-full"
-              style={{ width: `${bufferedPercentage}%` }}
-            />
-            <div
-              className="absolute left-0 top-0 h-full bg-red-500 rounded-full transition-all group-hover:bg-red-400"
-              style={{ width: `${progressPercentage}%` }}
-            />
-          </div>
-
-          <input
-            type="range"
-            min="0"
-            max="100"
-            step="0.1"
-            value={progressPercentage}
-            onInput={handleSeekInput}
-            onChange={handleSeekInput}
-            className="absolute inset-0 h-4 -top-1 w-full cursor-pointer opacity-0"
-            aria-label="Track progress"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={Math.floor(progressPercentage)}
-          />
-        </div>
-
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 md:gap-4 w-full">
-          {/* Left: Song info (div 1) */}
-          <div className="flex items-center gap-2 md:gap-3 min-w-0 justify-self-start">
-            {currentSong.thumbnail ? (
-              <img
-                src={currentSong.thumbnail}
-                alt={currentSong.title}
-                className="w-10 h-10 md:w-12 md:h-12 rounded object-cover shrink-0"
-              />
-            ) : (
-              <div className="w-10 h-10 md:w-12 md:h-12 rounded bg-white/10 flex items-center justify-center shrink-0">
-                <Music size={16} className="text-white/30" />
+      {/* Compact mobile overlay (shows when playlist detail opens) */}
+      {compactMobileOpen && (
+        <div className="fixed bottom-20 left-0 right-0 z-50 px-4 md:hidden">
+          <div className="mx-auto max-w-2xl rounded-2xl bg-[#020e28]/35 backdrop-blur-xl border border-white/10 px-3 py-2 shadow-[0_18px_40px_rgba(0,0,0,0.25)]">
+            <div className="grid grid-cols-[auto_auto_auto] items-center gap-3">
+              <div className="shrink-0">
+                {currentSong.thumbnail ? (
+                  <img src={currentSong.thumbnail} alt={currentSong.title} className="w-10 h-10 rounded object-cover" />
+                ) : (
+                  <div className="w-10 h-10 rounded bg-white/10 flex items-center justify-center">
+                    <Music size={16} className="text-white/30" />
+                  </div>
+                )}
               </div>
-            )}
 
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <p className="text-white text-xs md:text-sm font-semibold truncate">
-                  {currentSong.title}
-                </p>
-                <button
-                  onClick={() => setIsFavorite((value) => !value)}
-                  className="shrink-0 rounded-full p-1 text-white/70 transition hover:bg-white/10 hover:text-white"
-                  title="Favorite track"
-                >
-                  <Heart size={14} className={isFavorite ? 'fill-white text-white' : ''} />
+              <div className="flex items-center justify-center gap-2">
+                <button onClick={previousSong} className="p-2 text-white/80" title="Previous">
+                  <SkipBack size={16} />
+                </button>
+
+                {isPlaying ? (
+                  <button onClick={pauseSong} className="w-11 h-11 rounded-full bg-red-500 text-white flex items-center justify-center shadow-md">
+                    <Pause size={18} />
+                  </button>
+                ) : (
+                  <button onClick={resumeSong} className="w-11 h-11 rounded-full bg-red-500 text-white flex items-center justify-center shadow-md">
+                    <Play size={18} />
+                  </button>
+                )}
+
+                <button onClick={nextSong} className="p-2 text-white/80" title="Next">
+                  <SkipForward size={16} />
                 </button>
               </div>
-              <p className="text-white/50 text-xs truncate">
-                {currentSong.artist?.name || currentSong.artist_name || collection?.name || 'Playlist'}
-              </p>
+
+              <div className="text-right">
+                <p className="text-[11px] text-white/60 whitespace-nowrap">{Math.floor(currentTime / 1000)}s / {Math.floor(duration / 1000)}s</p>
+              </div>
+            </div>
+
+            <div className="relative mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+              <div
+                className="absolute left-0 top-0 h-full rounded-full bg-red-500 transition-all"
+                style={{ width: `${progressPercentage}%` }}
+              />
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="0.1"
+                value={progressPercentage}
+                onInput={handleSeekInput}
+                onChange={handleSeekInput}
+                className="absolute inset-0 h-4 w-full cursor-pointer opacity-0"
+                aria-label="Track progress"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.floor(progressPercentage)}
+              />
             </div>
           </div>
+        </div>
+      )}
 
-          {/* Center: Primary controls (div 2) */}
-          <div className="flex items-center gap-1.5 md:gap-3 justify-center shrink-0 px-2 justify-self-center">
-            <button
-              onClick={toggleShuffle}
-              className={`hidden md:inline-flex p-2 rounded-lg transition ${isShuffling ? 'bg-white/15 text-white' : 'hover:bg-white/10 text-white/70 hover:text-white'}`}
-              title="Shuffle"
-            >
-              <Shuffle size={18} />
-            </button>
-
-            <button
-              onClick={previousSong}
-              className="p-1 md:p-2 hover:bg-white/10 rounded-lg transition text-white/70 hover:text-white"
-              title="Previous track"
-            >
-              <SkipBack size={16} className="md:w-5 md:h-5" />
-            </button>
-
-            <button
-              onClick={isPlaying ? pauseSong : resumeSong}
-              className="p-1.5 md:p-2 bg-red-500 hover:bg-red-600 rounded-full transition text-white"
-              title={isPlaying ? 'Pause' : 'Play'}
-            >
-              {isPlaying ? (
-                <Pause size={18} className="fill-white md:w-5 md:h-5" />
+      {/* Full mini player (desktop + fallback on mobile) */}
+      <div className="fixed bottom-0 left-0 right-0 hidden md:block bg-black/60 text-white px-8 py-3 md:py-4 border-t border-white/10 z-40">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 md:gap-4 w-full">
+          <div className="flex items-center gap-3 min-w-0 justify-self-start">
+            <div className="w-10 h-10 bg-white/5 rounded flex items-center justify-center shrink-0">
+              {currentSong.thumbnail ? (
+                <img src={currentSong.thumbnail} alt={currentSong.title} className="w-full h-full object-cover rounded" />
               ) : (
-                <Play size={18} className="fill-white md:w-5 md:h-5 ml-0.5" />
+                <Music size={18} />
               )}
-            </button>
+            </div>
 
-            <button
-              onClick={nextSong}
-              className="p-1 md:p-2 hover:bg-white/10 rounded-lg transition text-white/70 hover:text-white"
-              title="Next track"
-            >
-              <SkipForward size={16} className="md:w-5 md:h-5" />
-            </button>
+            <div className="min-w-0 flex-1 max-w-70">
+              <MarqueeText
+                text={currentSong.title}
+                className="text-sm font-semibold text-white"
+                width="100%"
+                speed={12}
+                pauseMs={2000}
+              />
+              <div className="text-xs text-white/70 truncate">
+                {Math.floor(currentTime / 1000)}s / {Math.floor(duration / 1000)}s
+              </div>
+            </div>
+          </div>
 
-            <button
-              onClick={cycleRepeatMode}
-              className={`hidden md:inline-flex p-2 rounded-lg transition ${repeatMode !== 'off' ? 'bg-white/15 text-white' : 'hover:bg-white/10 text-white/70 hover:text-white'}`}
-              title="Repeat"
-            >
-              <Repeat size={18} />
+          <div className="flex items-center gap-2 justify-center shrink-0 px-2">
+            <button onClick={previousSong} className="p-2 rounded-full hover:bg-white/10" title="Previous">
+              <SkipBack size={16} />
+            </button>
+            {isPlaying ? (
+              <button onClick={pauseSong} className="p-2 bg-red-500 rounded-full"><Pause size={18} /></button>
+            ) : (
+              <button onClick={resumeSong} className="p-2 bg-red-500 rounded-full"><Play size={18} /></button>
+            )}
+            <button onClick={nextSong} className="p-2 rounded-full hover:bg-white/10" title="Next">
+              <SkipForward size={18} />
             </button>
           </div>
 
-          {/* Right: Secondary / other controls (div 3) */}
-          <div className="hidden md:flex items-center gap-2 shrink-0 pl-2 justify-self-end">
-            <div className="text-white/60 text-xs md:text-sm whitespace-nowrap ml-2">
-              {formatTime(currentTime)} / {formatTime(duration)}
+          <div className="flex items-center justify-end gap-3 min-w-0">
+            <div className="flex items-center gap-2 text-white/70">
+              <button onClick={() => toggleShuffle?.()} title="Shuffle" className={`p-2 rounded-md hover:bg-white/5 ${isShuffling ? 'text-red-400' : ''}`}>
+                <Shuffle size={16} />
+              </button>
+
+              <button onClick={() => cycleRepeatMode?.()} title={`Repeat: ${repeatMode}`} className="p-2 rounded-md hover:bg-white/5">
+                <Repeat size={16} />
+              </button>
+
+              <button title="Like" className="p-2 rounded-md hover:bg-white/5">
+                <Heart size={16} />
+              </button>
+
+              <button title="Queue" className="p-2 rounded-md hover:bg-white/5">
+                <List size={16} />
+              </button>
             </div>
 
-            <button
-              onClick={handleSleepButtonClick}
-              className="p-2 rounded-lg transition hover:bg-white/10 text-white/70 hover:text-white"
-              title="Sleep timer"
-            >
-              <MoonStar size={18} />
-            </button>
+            <div className="flex items-center gap-2">
+              <button onClick={() => toggleMute?.()} title={isMuted ? 'Unmute' : 'Mute'} className="p-2 rounded-md hover:bg-white/5">
+                {isMuted || volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
+              </button>
 
-            <button
-              className="p-2 rounded-lg transition hover:bg-white/10 text-white/70 hover:text-white"
-              title="More options"
-            >
-              <MoreVertical size={18} />
-            </button>
-
-            <button
-              onClick={toggleMute}
-              className="p-2 rounded-lg transition hover:bg-white/10 text-white/70 hover:text-white"
-              title="Volume"
-            >
-              {volumeIcon}
-            </button>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={Number(volume || 0)}
+                onChange={(e) => setVolumeValue?.(Number(e.target.value))}
+                className="w-28 h-1 appearance-none bg-white/10 rounded-lg"
+                aria-label="Volume"
+              />
+            </div>
+          </div>
+        </div>
+        {/* Desktop progress bar (click/drag to seek) */}
+        <div className="mt-3 px-2">
+          <div className="relative h-2 rounded-full bg-white/10 overflow-hidden">
+            <div className="absolute left-0 top-0 h-full bg-white/20" style={{ width: `${Math.max(0, Math.min((bufferedTime / (duration || 1)) * 100, 100))}%` }} />
+            <div className="absolute left-0 top-0 h-full rounded-full bg-red-500" style={{ width: `${progressPercentage}%` }} />
             <input
               type="range"
               min="0"
-              max="1"
-              step="0.01"
-              value={volume}
-              onChange={(event) => setVolumeValue(event.target.value)}
-              className="w-24 accent-red-500"
-              aria-label="Volume control"
+              max="100"
+              step="0.1"
+              value={progressPercentage}
+              onInput={handleSeekInput}
+              onChange={handleSeekInput}
+              className="absolute inset-0 h-4 w-full cursor-pointer opacity-0"
+              aria-label="Track progress"
             />
           </div>
         </div>

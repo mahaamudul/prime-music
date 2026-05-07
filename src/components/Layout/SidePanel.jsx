@@ -12,16 +12,18 @@ import {
   Compass,
   Crown,
   Library,
-  Search,
+  Activity,
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 const menuItems = [
-  { icon: CirclePlus, label: 'Add account' },
+  { icon: CirclePlus, label: 'Accounts' },
   { icon: Gauge, label: 'Listening stats' },
   { icon: Clock3, label: 'Recents' },
   { icon: MessageSquareText, label: 'Your Updates' },
   { icon: Settings2, label: 'Settings and privacy' },
+  { icon: Activity, label: 'Activity' },
+  { icon: Users, label: 'Invite friends' },
 ];
 
 const navItems = [
@@ -105,18 +107,7 @@ const SidePanel = ({ open, onClose }) => {
               </div>
             </div>
 
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-14 h-14 rounded-full bg-[#ff7a3d] flex items-center justify-center text-black text-[28px] font-bold">
-                M
-              </div>
-              <div>
-                <h2 className="text-[24px] leading-tight font-bold text-white">Mahmudul Hasan</h2>
-                <p className="text-white/55 text-[14px] mt-1">View profile</p>
-              </div>
-            </div>
-
-            <div className="space-y-6 border-t border-white/10 pt-5">
-              <div className="space-y-2 mb-3">
+            <div className="space-y-4">
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -125,7 +116,7 @@ const SidePanel = ({ open, onClose }) => {
                       to={item.path}
                       onClick={() => onClose()}
                       className={({ isActive }) =>
-                        `flex items-center gap-4 rounded-xl px-3 py-2 text-[16px] font-medium transition ${
+                        `flex items-center gap-3 rounded-lg px-3 py-2 text-[14px] font-medium transition ${
                           isActive ? 'bg-white/10 text-white' : 'text-white/70'
                         }`
                       }
@@ -135,59 +126,44 @@ const SidePanel = ({ open, onClose }) => {
                     </NavLink>
                   );
                 })}
-              </div>
 
-              {menuItems.map((item) => {
+              <div className="border-t border-white/10 pt-4 mt-4">
+                {menuItems.map((item) => {
                 const Icon = item.icon;
                 return (
                   <button
                     key={item.label}
                     type="button"
-                    className="flex items-center gap-4 text-left text-white w-full"
+                    className="flex items-center gap-3 text-left text-white/70 hover:text-white w-full px-3 py-2 rounded-lg text-[14px] transition"
                   >
-                    <Icon size={26} strokeWidth={1.8} />
-                    <span className="text-[20px] leading-tight font-normal">{item.label}</span>
+                    <Icon size={20} strokeWidth={1.8} />
+                    <span>{item.label}</span>
                   </button>
                 );
               })}
-            </div>
-
-            <div className="mt-10 flex items-center gap-4">
-              <div className="w-16 text-center">
-                <div className="w-14 h-14 rounded-full bg-[#9b5d40] flex items-center justify-center text-black text-[28px] font-bold mx-auto">
-                  M
-                </div>
-                <p className="text-white text-[12px] mt-3">Activity</p>
-                <p className="text-white/55 text-[12px]">Turn on</p>
-              </div>
-              <div className="w-16 text-center">
-                <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center mx-auto">
-                  <Users size={22} className="text-white" />
-                </div>
-                <p className="text-white text-[12px] mt-3">Invite friends</p>
               </div>
             </div>
 
-            <div className="mt-12">
+            <div className="mt-8 border-t border-white/10 pt-4">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-white text-[26px] leading-none font-bold">Messages</h3>
+                <h3 className="text-white text-[16px] leading-none font-bold">Messages</h3>
                 <div className="flex items-center gap-4 text-white/90">
-                  <ArrowLeft size={26} className="rotate-180" />
-                  <PencilLine size={24} />
+                  <ArrowLeft size={20} className="rotate-180" />
+                  <PencilLine size={18} />
                 </div>
               </div>
-              <p className="text-white/55 text-[15px] leading-snug" style={{ maxWidth: 240 }}>
-                Share what you love with friends, directly on Spotify.
+              <p className="text-white/55 text-[12px] leading-snug mb-4">
+                Share what you love with friends, directly on Prime Music.
               </p>
 
               <button
                 type="button"
-                className="mt-8 flex items-center gap-4 text-white"
+                className="flex items-center gap-3 text-white/70 hover:text-white transition text-[14px]"
               >
-                <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center">
-                  <PencilLine size={22} />
+                <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                  <PencilLine size={18} />
                 </div>
-                <span className="text-[18px] font-normal">New message</span>
+                <span className="font-normal">New message</span>
               </button>
             </div>
           </div>

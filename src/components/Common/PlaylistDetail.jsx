@@ -15,6 +15,7 @@ import {
   Bookmark,
 } from 'lucide-react';
 import { MusicPlayerContext } from '../../contexts/MusicPlayerContext';
+import MarqueeText from './MarqueeText';
 
 const PlaylistDetail = ({ 
   collection, 
@@ -23,7 +24,7 @@ const PlaylistDetail = ({
   loading = false,
   error = null 
 }) => {
-  const { currentSong, isPlaying, playSong, pauseSong, resumeSong } = useContext(MusicPlayerContext);
+  const { currentSong, isPlaying, playSong, pauseSong, resumeSong, nextSong, previousSong } = useContext(MusicPlayerContext);
   const [isPlayingAllSongs, setIsPlayingAllSongs] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isDesktopShuffle, setIsDesktopShuffle] = useState(false);
@@ -106,6 +107,15 @@ const PlaylistDetail = ({
     );
   }
 
+  React.useEffect(() => {
+    // Notify mini-player to hide on mobile when playlist detail is open
+    window.dispatchEvent(new CustomEvent('playlist-open', { detail: { open: true } }));
+
+    return () => {
+      window.dispatchEvent(new CustomEvent('playlist-open', { detail: { open: false } }));
+    };
+  }, []);
+
   return (
     <div className="pb-32 md:pb-40" style={{ backgroundColor: bgColor }}>
       <div className="px-4 md:px-8 pt-4 md:pt-6">
@@ -122,7 +132,7 @@ const PlaylistDetail = ({
         <div className="grid gap-6 md:grid-cols-[240px_minmax(0,1fr)] md:items-end">
           {/* Mobile top: centered square cover + compact meta */}
           <div className="md:hidden text-center">
-            <div className="mx-auto inline-block p-2 bg-white/10 rounded-lg">
+            <div className="mx-auto inline-block p-1 bg-transparent rounded-lg border-4 border-white" style={{ width: 168 }}>
               {collection?.cover_url ? (
                 <img
                   src={collection.cover_url}
@@ -137,23 +147,23 @@ const PlaylistDetail = ({
               )}
             </div>
 
-            <p className="mt-3 text-sm font-semibold text-white">{collection?.name}</p>
-            <p className="mt-1 text-xs text-white/60">{songCount} tracks · {formatDuration(totalDurationMs)}</p>
+            <p className="mt-4 text-lg font-semibold text-white">{collection?.name}</p>
+            <p className="mt-2 text-sm text-white/60">{songCount} songs · {formatDuration(totalDurationMs)}</p>
 
-            <div className="mt-3 flex items-center justify-center gap-8">
-              <button className="text-white/80">
-                <Bookmark size={22} />
+            <div className="mt-4 flex items-center justify-center gap-8">
+              <button className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center bg-transparent">
+                <Bookmark size={18} className="text-white/90" />
               </button>
 
               <button
                 onClick={handlePlayAllClick}
-                className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white text-black"
+                className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500 text-white shadow-lg"
               >
-                {isPlayingAllSongs && isPlaying ? <Pause size={20} /> : <Play size={20} />}
+                {isPlayingAllSongs && isPlaying ? <Pause size={22} /> : <Play size={22} />}
               </button>
 
-              <button className="text-white/80">
-                <Share2 size={22} />
+              <button className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center bg-transparent">
+                <Share2 size={18} className="text-white/90" />
               </button>
             </div>
           </div>
@@ -178,7 +188,7 @@ const PlaylistDetail = ({
             )}
           </div>
 
-          <div className="pb-1 text-white">
+          <div className="pb-1 text-white hidden md:block">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/70">
               {collection?.type?.toUpperCase() || 'PLAYLIST'}
             </p>
@@ -274,9 +284,13 @@ const PlaylistDetail = ({
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           {isSongPlaying && <Pause size={14} className="text-white shrink-0" />}
-                          <span className={`truncate text-sm font-medium ${isCurrentSong ? 'text-white' : 'text-white/90'}`}>
-                            {song.title}
-                          </span>
+                          <MarqueeText
+                            text={song.title}
+                            className={`text-sm font-medium ${isCurrentSong ? 'text-white' : 'text-white/90'}`}
+                            width="110px"
+                            speed={14}
+                            pauseMs={2000}
+                          />
                         </div>
                         {song.tags && (
                           <p className="truncate text-xs text-white/50">{song.tags}</p>
@@ -296,7 +310,7 @@ const PlaylistDetail = ({
 
         <div className="space-y-2 md:hidden">
           <h2 className="mb-2 text-lg font-semibold text-white">Songs</h2>
-          {songs.length === 0 ? (
+            {songs.length === 0 ? (
             <div className="py-8 text-center text-white/70">No songs available</div>
           ) : (
             songs.map((song) => {
@@ -304,38 +318,49 @@ const PlaylistDetail = ({
               const isSongPlaying = isCurrentSong && isPlaying;
 
               return (
-                <button
+                <div
                   key={song.id}
                   onClick={() => handleSongClick(song)}
-                  className={`w-full rounded-xl border px-3 py-3 text-left transition ${
-                    isCurrentSong ? 'border-white/40 bg-white/10' : 'border-white/10 bg-white/5 hover:bg-white/10'
+                  className={`w-full rounded-xl px-3 py-3 text-left transition ${
+                    isCurrentSong ? 'border-2 border-white/40 bg-transparent' : ''
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     {song.thumbnail ? (
-                      <img src={song.thumbnail} alt={song.title} className="h-12 w-12 rounded object-cover" />
+                      <img src={song.thumbnail} alt={song.title} className={`h-12 w-12 rounded object-cover ${isCurrentSong ? 'ring-2 ring-white/40' : ''}`} />
                     ) : (
-                      <div className="flex h-12 w-12 items-center justify-center rounded bg-white/10">
+                      <div className={`flex h-12 w-12 items-center justify-center rounded bg-white/10 ${isCurrentSong ? 'ring-2 ring-white/40' : ''}`}>
                         <Music size={20} className="text-white/30" />
                       </div>
                     )}
 
                     <div className="min-w-0 flex-1">
-                      <div className="flex flex-col">
-                        <span className="truncate text-sm font-medium text-white">{song.title}</span>
-                        <p className="truncate text-xs text-white/60">{artistName(song)}</p>
+                      <div className="flex items-center justify-between">
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <MarqueeText
+                              text={song.title}
+                              className="text-sm font-medium text-white"
+                              width="70px"
+                              speed={14}
+                              pauseMs={2000}
+                            />
+                            <p className="truncate text-xs text-white/60">{artistName(song)}</p>
+                          </div>
+                        {/* right-side small actions */}
                       </div>
                     </div>
 
-                    <div className="flex flex-col items-end gap-2">
-                      <div className="flex items-center gap-3 text-white/30">
-                        <button type="button"><Download size={18} /></button>
-                        <button type="button"><Play size={18} /></button>
-                      </div>
-                      <span className="text-xs text-white/60">{formatDuration(song.duration)}</span>
+                    <div className="flex items-center gap-2">
+                      <button type="button" onClick={(e) => { e.stopPropagation(); /* implement download later */ }} className="p-2 rounded-full border border-white/20 flex items-center justify-center">
+                        <Download size={16} className="text-white/80" />
+                      </button>
+
+                      <button type="button" onClick={(e) => { e.stopPropagation(); handleSongClick(song); }} className={`p-2 rounded-full border border-white/20 flex items-center justify-center ${isCurrentSong ? 'bg-white/10' : ''}`}>
+                        {isCurrentSong && isSongPlaying ? <Pause size={16} /> : <Play size={16} />}
+                      </button>
                     </div>
                   </div>
-                </button>
+                </div>
               );
             })
           )}

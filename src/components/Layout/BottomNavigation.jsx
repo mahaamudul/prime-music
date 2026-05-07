@@ -5,6 +5,17 @@ import { useLocation, useNavigate } from 'react-router-dom';
 const BottomNavigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [hidden, setHidden] = React.useState(false);
+
+  React.useEffect(() => {
+    const handler = (e) => {
+      const playing = e?.detail?.playing;
+      if (typeof playing === 'boolean') setHidden(!!playing);
+    };
+
+    window.addEventListener('player-playing', handler);
+    return () => window.removeEventListener('player-playing', handler);
+  }, []);
 
   const tabs = [
     { name: 'Home', path: '/', icon: Home },
@@ -16,7 +27,7 @@ const BottomNavigation = () => {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-[#020e28]/35 backdrop-blur-xl mx-auto max-w-2xl md:hidden">
+    <nav className={`fixed left-0 right-0 bg-[#020e28]/35 backdrop-blur-xl mx-auto max-w-2xl md:hidden transition-transform ${hidden ? 'translate-y-full' : 'translate-y-0'}`} style={{ bottom: 0 }}>
       <div className="flex justify-around items-center h-20">
         {tabs.map((tab) => {
           const Icon = tab.icon;
