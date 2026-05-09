@@ -28,10 +28,20 @@ const PlaylistDetail = ({
   loading = false,
   error = null 
 }) => {
-  const { currentSong, isPlaying, playSong, pauseSong, resumeSong, nextSong, previousSong } = useContext(MusicPlayerContext);
+  const {
+    currentSong,
+    isPlaying,
+    isShuffling,
+    playSong,
+    playPlaylist,
+    pauseSong,
+    resumeSong,
+    queue,
+    toggleShuffle,
+    isCollectionFavorite,
+    toggleCollectionFavorite,
+  } = useContext(MusicPlayerContext);
   const [isPlayingAllSongs, setIsPlayingAllSongs] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [isDesktopShuffle, setIsDesktopShuffle] = useState(false);
 
   const parseColor = (colorStr) => {
     if (!colorStr) return '#1a1a1a';
@@ -42,31 +52,40 @@ const PlaylistDetail = ({
   const handlePlayAllClick = () => {
     if (songs.length === 0) return;
 
+    const isCurrentSongInThisCollection = !!currentSong && songs.some((song) => song?.id === currentSong?.id);
+    const isQueueMatchingCollection = Array.isArray(queue)
+      && queue.length === songs.length
+      && queue.every((song, index) => song?.id === songs[index]?.id);
+
     debugPlaylistDetail('play-all', {
       collection: collection?.name,
       songs: songs.length,
       currentSong: currentSong?.title,
       isPlaying,
+      isCurrentSongInThisCollection,
+      isQueueMatchingCollection,
     });
-    
-    if (isPlayingAllSongs && isPlaying) {
+
+    if (isCurrentSongInThisCollection && isQueueMatchingCollection && isPlaying) {
       pauseSong();
-    } else if (isPlayingAllSongs && !isPlaying) {
+    } else if (isCurrentSongInThisCollection && isQueueMatchingCollection && !isPlaying) {
       resumeSong();
     } else {
-      // Start from first song
+      // Start/rebuild playlist queue from first song
       setIsPlayingAllSongs(true);
-      playSong(songs[0], songs, collection);
+      playPlaylist(songs, 0, collection);
     }
   };
 
   const handleSongClick = (song) => {
+    const startIndex = Math.max(0, songs.findIndex((item) => item?.id === song?.id));
     debugPlaylistDetail('song-click', {
       songId: song?.id,
       title: song?.title,
       collection: collection?.name,
+      startIndex,
     });
-    playSong(song, songs, collection);
+    playSong(song, songs, startIndex, collection);
     setIsPlayingAllSongs(true);
   };
 
@@ -76,13 +95,14 @@ const PlaylistDetail = ({
   };
 
   const handleShuffleClick = () => {
-    debugPlaylistDetail('shuffle-toggle', { from: isDesktopShuffle, to: !isDesktopShuffle, collection: collection?.name });
-    setIsDesktopShuffle((value) => !value);
+    debugPlaylistDetail('shuffle-toggle', { from: isShuffling, to: !isShuffling, collection: collection?.name });
+    toggleShuffle?.();
   };
 
   const handleFavoriteClick = () => {
-    debugPlaylistDetail('favorite-toggle', { from: isFavorite, to: !isFavorite, collection: collection?.name });
-    setIsFavorite((value) => !value);
+    const nextValue = !isCollectionFavorite?.(collection);
+    debugPlaylistDetail('favorite-toggle', { from: isCollectionFavorite?.(collection), to: nextValue, collection: collection?.name });
+    toggleCollectionFavorite?.(collection);
   };
 
   const handleMoreClick = () => {
@@ -113,6 +133,7 @@ const PlaylistDetail = ({
 
   const artistName = (song) => song?.artist?.name || song?.artist_name || 'Unknown artist';
   const albumName = (song) => song?.album?.name || song?.album_name || collection?.name || 'Album';
+  const isFavorite = isCollectionFavorite?.(collection);
 
   if (loading) {
     return (
@@ -196,8 +217,12 @@ const PlaylistDetail = ({
             <p className="mt-2 text-sm text-white/60">{songCount} songs · {formatDuration(totalDurationMs)}</p>
 
             <div className="mt-4 flex items-center justify-center gap-8">
-              <button className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center bg-transparent">
-                <Bookmark size={18} className="text-white/90" />
+              <button
+                onClick={handleShuffleClick}
+                className={`w-10 h-10 rounded-full border border-white/30 flex items-center justify-center bg-transparent ${isShuffling ? 'bg-white/10' : ''}`}
+                title="Shuffle"
+              >
+                <Shuffle size={18} className={isShuffling ? 'text-white' : 'text-white/90'} />
               </button>
 
               <button
@@ -207,8 +232,20 @@ const PlaylistDetail = ({
                 {isPlayingAllSongs && isPlaying ? <Pause size={22} /> : <Play size={22} />}
               </button>
 
-              <button className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center bg-transparent">
-                <Share2 size={18} className="text-white/90" />
+              <button
+                onClick={handleFavoriteClick}
+                className={`w-10 h-10 rounded-full border border-white/30 flex items-center justify-center bg-transparent ${isFavorite ? 'bg-white/10' : ''}`}
+                title="Favorite"
+              >
+                <Heart size={18} className={isFavorite ? 'fill-white text-white' : 'text-white/90'} />
+              </button>
+
+              <button
+                onClick={handleMoreClick}
+                className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center bg-transparent"
+                title="More"
+              >
+                <MoreVertical size={18} className="text-white/90" />
               </button>
             </div>
           </div>
@@ -256,10 +293,10 @@ const PlaylistDetail = ({
               <button
                 onClick={handleShuffleClick}
                 className={`inline-flex items-center gap-2 rounded-full border border-white/25 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10 ${
-                  isDesktopShuffle ? 'bg-white/15' : 'bg-transparent'
+                  isShuffling ? 'bg-white/15' : 'bg-transparent'
                 }`}
               >
-                <Shuffle size={18} />
+                <Shuffle size={18} className={isShuffling ? 'text-white' : ''} />
                 Shuffle
               </button>
 

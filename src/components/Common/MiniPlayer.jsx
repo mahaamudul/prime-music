@@ -1,5 +1,5 @@
 import React, { useContext, useMemo } from 'react';
-import { Music, Pause, Play, SkipBack, SkipForward, Volume2, VolumeX, Shuffle, Repeat, Repeat1, Heart, ListMusic } from 'lucide-react';
+import { Music, Pause, Play, SkipBack, SkipForward, Volume2, VolumeX, Shuffle, Repeat, Repeat1, Heart, MoreVertical, ListMusic } from 'lucide-react';
 import { MusicPlayerContext } from '../../contexts/MusicPlayerContext';
 import MarqueeText from './MarqueeText';
 
@@ -12,6 +12,13 @@ const clamp = (value, min, max) => {
 const safeSeconds = (value) => {
   const numeric = Number(value);
   return Number.isFinite(numeric) && numeric > 0 ? numeric : 0;
+};
+
+const formatTime = (milliseconds) => {
+  const totalSeconds = Math.max(0, Math.floor(safeSeconds(milliseconds) / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 };
 
 const debugMiniPlayer = (action, payload = {}) => {
@@ -30,6 +37,7 @@ const MiniPlayer = () => {
     isMuted,
     isShuffling,
     repeatMode,
+    collection,
     pauseSong,
     resumeSong,
     nextSong,
@@ -40,6 +48,8 @@ const MiniPlayer = () => {
     setVolumeValue,
     seek,
     toggleQueue,
+    isCollectionFavorite,
+    toggleCollectionFavorite,
   } = useContext(MusicPlayerContext);
 
   // Calculate progress percentage
@@ -56,9 +66,6 @@ const MiniPlayer = () => {
     const safeBufferedTime = clamp(bufferedTime, 0, safeDuration);
     return Math.max(0, Math.min((safeBufferedTime / safeDuration) * 100, 100));
   }, [bufferedTime, duration]);
-
-  const currentSeconds = Math.floor(safeSeconds(currentTime) / 1000);
-  const totalSeconds = Math.floor(safeSeconds(duration) / 1000);
 
   // Handle seek input
   const handleSeekInput = (e) => {
@@ -116,6 +123,17 @@ const MiniPlayer = () => {
     toggleQueue?.();
   };
 
+  const handleFavorite = () => {
+    debugMiniPlayer('favorite-toggle', { collection: collection?.name, currentSong: currentSong?.title });
+    toggleCollectionFavorite?.(collection);
+  };
+
+  const handleMore = () => {
+    debugMiniPlayer('more', { collection: collection?.name, currentSong: currentSong?.title });
+  };
+
+  const isFavorite = isCollectionFavorite?.(collection);
+
   // Don't render if no song
   if (!currentSong || !currentSong.id) {
     return null;
@@ -159,7 +177,7 @@ const MiniPlayer = () => {
 
             {/* Time display */}
             <div className="text-right">
-              <p className="text-[11px] text-white/60 whitespace-nowrap">{currentSeconds}s / {totalSeconds}s</p>
+              <p className="text-[11px] text-white/60 whitespace-nowrap">{formatTime(currentTime)} / {formatTime(duration)}</p>
             </div>
           </div>
 
@@ -209,7 +227,7 @@ const MiniPlayer = () => {
                 pauseMs={2000}
               />
               <div className="text-xs text-white/70 truncate">
-                {Math.floor(currentTime / 1000)}s / {Math.floor(duration / 1000)}s
+                {formatTime(currentTime)} / {formatTime(duration)}
               </div>
             </div>
           </div>
@@ -257,16 +275,20 @@ const MiniPlayer = () => {
               )}
             </button>
 
-            <button className="p-2 rounded-md hover:bg-white/5">
-              <Heart size={16} />
+            <button
+              onClick={handleFavorite}
+              title="Favorite"
+              className={`p-2 rounded-md hover:bg-white/5 ${isFavorite ? 'text-red-400' : ''}`}
+            >
+              <Heart size={16} className={isFavorite ? 'fill-current' : ''} />
             </button>
 
             <button
-              onClick={handleToggleQueue}
-              title="Queue"
-              className="p-2 rounded-md hover:bg-white/5 md:hidden"
+              onClick={handleMore}
+              title="More"
+              className="p-2 rounded-md hover:bg-white/5"
             >
-              <ListMusic size={16} />
+              <MoreVertical size={16} />
             </button>
 
             <div className="flex items-center gap-2 px-2 border-l border-white/10">
@@ -284,6 +306,14 @@ const MiniPlayer = () => {
                 aria-label="Volume"
               />
             </div>
+
+            <button
+              onClick={handleToggleQueue}
+              title="Queue"
+              className=" hover:bg-white/5  border-white/10 "
+            >
+              <ListMusic size={16} />
+            </button>
           </div>
         </div>
 

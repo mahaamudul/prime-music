@@ -52,6 +52,7 @@ export const MusicPlayerProvider = ({ children }) => {
   const [isMuted, setIsMuted] = useState(false);
   const [isShuffling, setIsShuffling] = useState(false);
   const [repeatMode, setRepeatMode] = useState('off');
+  const [favoriteCollections, setFavoriteCollections] = useState({});
 
   // Error and timer state
   const [error, setError] = useState(null);
@@ -67,6 +68,43 @@ export const MusicPlayerProvider = ({ children }) => {
   const updateIntervalRef = useRef(null);
   const lastSongIdRef = useRef(null);
   const loadGenerationRef = useRef(0);
+  const queueRef = useRef([]);
+  const currentIndexRef = useRef(0);
+  const currentSongRef = useRef(null);
+  const repeatModeRef = useRef('off');
+
+  const getCollectionKey = useCallback((collectionLike) => {
+    if (!collectionLike) return null;
+    return collectionLike.id || collectionLike.name || null;
+  }, []);
+
+  const isCollectionFavorite = useCallback((collectionLike) => {
+    const key = getCollectionKey(collectionLike);
+    return key ? !!favoriteCollections[key] : false;
+  }, [favoriteCollections, getCollectionKey]);
+
+  const toggleCollectionFavorite = useCallback((collectionLike) => {
+    const key = getCollectionKey(collectionLike);
+    if (!key) return false;
+
+    setFavoriteCollections((prev) => {
+      const nextValue = !prev[key];
+      debugPlayer('toggleFavorite', { collectionKey: key, from: !!prev[key], to: nextValue });
+      return {
+        ...prev,
+        [key]: nextValue,
+      };
+    });
+
+    return true;
+  }, [getCollectionKey]);
+
+  useEffect(() => {
+    queueRef.current = queue;
+    currentIndexRef.current = currentIndex;
+    currentSongRef.current = currentSong;
+    repeatModeRef.current = repeatMode;
+  }, [queue, currentIndex, currentSong, repeatMode]);
 
   // Clean up Howl instance
   const unloadHowl = useCallback(() => {
@@ -278,13 +316,16 @@ export const MusicPlayerProvider = ({ children }) => {
           setError(`Failed to load song: ${song.title}`);
         }
 
-        if (autoAdvance && queue.length > 1) {
-          const queueLength = queue.length;
-          const start = Number.isFinite(advanceIndex) ? advanceIndex : currentIndex;
+        const activeQueue = queueRef.current;
+        const activeCurrentIndex = currentIndexRef.current;
+
+        if (autoAdvance && activeQueue.length > 1) {
+          const queueLength = activeQueue.length;
+          const start = Number.isFinite(advanceIndex) ? advanceIndex : activeCurrentIndex;
           const nextIndex = (start + direction + queueLength) % queueLength;
 
           if (nextIndex !== start) {
-            const skippedSong = queue[nextIndex];
+            const skippedSong = activeQueue[nextIndex];
             debugPlayer('loadSong:autoAdvance', {
               fromIndex: start,
               toIndex: nextIndex,
@@ -294,6 +335,8 @@ export const MusicPlayerProvider = ({ children }) => {
 
             setCurrentIndex(nextIndex);
             setCurrentSong(skippedSong);
+            currentIndexRef.current = nextIndex;
+            currentSongRef.current = skippedSong;
             loadSong(skippedSong, {
               advanceIndex: nextIndex,
               direction,
@@ -338,39 +381,57 @@ export const MusicPlayerProvider = ({ children }) => {
     }
   }, [volume, isMuted, startPositionUpdate, stopPositionUpdate, unloadHowl, currentSong, startCurrentPlayback]);
 
-  // Handle song end (determine next action based on repeat mode)
+  // Handle song end (advance queue by default, respect repeat mode)
   const handleSongEnd = useCallback(() => {
-    if (repeatMode === 'one') {
-      // Replay same song
+    const activeRepeatMode = repeatModeRef.current;
+    const activeQueue = queueRef.current;
+    const activeCurrentIndex = currentIndexRef.current;
+    const activeCurrentSong = currentSongRef.current;
+
+    if (activeRepeatMode === 'one') {
       if (howlRef.current && soundIdRef.current !== null) {
-        debugPlayer('handleSongEnd:repeat-one', { songId: currentSong?.id, title: currentSong?.title });
+        debugPlayer('handleSongEnd:repeat-one', { songId: activeCurrentSong?.id, title: activeCurrentSong?.title });
         howlRef.current.seek(0, soundIdRef.current);
         howlRef.current.play(soundIdRef.current);
       }
-    } else if (repeatMode === 'all') {
-      // Play next song or loop to first
-      const nextIdx = currentIndex + 1;
-      if (nextIdx < queue.length) {
-        const nextSong = queue[nextIdx];
-        setCurrentIndex(nextIdx);
-        setCurrentSong(nextSong);
-        debugPlayer('handleSongEnd:advance', { fromIndex: currentIndex, toIndex: nextIdx, songId: nextSong?.id, title: nextSong?.title });
-        loadSong(nextSong, { advanceIndex: nextIdx, direction: 1, autoAdvance: true });
-      } else {
-        // Loop back to first song
-        const firstSong = queue[0];
-        setCurrentIndex(0);
-        setCurrentSong(firstSong);
-        debugPlayer('handleSongEnd:loop', { songId: firstSong?.id, title: firstSong?.title });
-        loadSong(firstSong, { advanceIndex: 0, direction: 1, autoAdvance: true });
-      }
-    } else {
-      // Repeat off - stop at end
-      debugPlayer('handleSongEnd:stop');
-      setIsPlaying(false);
-      stopPositionUpdate();
+      return;
     }
-  }, [repeatMode, currentIndex, queue, loadSong, currentSong, stopPositionUpdate]);
+
+    const nextIdx = activeCurrentIndex + 1;
+
+    // Advance to next song while available.
+    if (nextIdx < activeQueue.length) {
+      const nextSong = activeQueue[nextIdx];
+      setCurrentIndex(nextIdx);
+      setCurrentSong(nextSong);
+      currentIndexRef.current = nextIdx;
+      currentSongRef.current = nextSong;
+      debugPlayer('handleSongEnd:advance', {
+        fromIndex: activeCurrentIndex,
+        toIndex: nextIdx,
+        songId: nextSong?.id,
+        title: nextSong?.title,
+      });
+      loadSong(nextSong, { advanceIndex: nextIdx, direction: 1, autoAdvance: true });
+      return;
+    }
+
+    // At queue end: loop only in repeat-all, otherwise stop.
+    if (activeRepeatMode === 'all' && activeQueue.length > 0) {
+      const firstSong = activeQueue[0];
+      setCurrentIndex(0);
+      setCurrentSong(firstSong);
+      currentIndexRef.current = 0;
+      currentSongRef.current = firstSong;
+      debugPlayer('handleSongEnd:loop', { songId: firstSong?.id, title: firstSong?.title });
+      loadSong(firstSong, { advanceIndex: 0, direction: 1, autoAdvance: true });
+      return;
+    }
+
+    debugPlayer('handleSongEnd:stop-at-end', { currentIndex: activeCurrentIndex, queueLength: activeQueue.length });
+    setIsPlaying(false);
+    stopPositionUpdate();
+  }, [loadSong, stopPositionUpdate]);
 
   // Play a specific song from queue
   const playSong = useCallback((song, songQueue = [], startIndex = 0, collectionData = null) => {
@@ -382,6 +443,9 @@ export const MusicPlayerProvider = ({ children }) => {
     setQueue(songQueue.length > 0 ? songQueue : [song]);
     setCurrentSong(song);
     setCurrentIndex(startIndex);
+    queueRef.current = songQueue.length > 0 ? songQueue : [song];
+    currentSongRef.current = song;
+    currentIndexRef.current = startIndex;
     setCollection(collectionData);
     setCurrentTime(0);
     setError(null);
@@ -501,25 +565,26 @@ export const MusicPlayerProvider = ({ children }) => {
 
   // Next song
   const next = useCallback(() => {
-    if (queue.length === 0) return;
+    const activeQueue = queueRef.current;
+    if (activeQueue.length === 0) return;
 
-    debugPlayer('next', { currentIndex, queueLength: queue.length, isShuffling, repeatMode });
+    debugPlayer('next', { currentIndex: currentIndexRef.current, queueLength: activeQueue.length, isShuffling, repeatMode: repeatModeRef.current });
 
     let nextIdx;
     if (isShuffling) {
       // Random next song (but not the same song)
-      let randomIdx = Math.floor(Math.random() * queue.length);
-      if (queue.length > 1) {
-        while (randomIdx === currentIndex) {
-          randomIdx = Math.floor(Math.random() * queue.length);
+      let randomIdx = Math.floor(Math.random() * activeQueue.length);
+      if (activeQueue.length > 1) {
+        while (randomIdx === currentIndexRef.current) {
+          randomIdx = Math.floor(Math.random() * activeQueue.length);
         }
       }
       nextIdx = randomIdx;
     } else {
       // Sequential next song
-      nextIdx = currentIndex + 1;
-      if (nextIdx >= queue.length) {
-        if (repeatMode === 'all') {
+      nextIdx = currentIndexRef.current + 1;
+      if (nextIdx >= activeQueue.length) {
+        if (repeatModeRef.current === 'all') {
           nextIdx = 0; // Loop to beginning
         } else {
           return; // Stop at end
@@ -527,28 +592,33 @@ export const MusicPlayerProvider = ({ children }) => {
       }
     }
 
-    const nextSong = queue[nextIdx];
+    const nextSong = activeQueue[nextIdx];
     setCurrentIndex(nextIdx);
     setCurrentSong(nextSong);
+    currentIndexRef.current = nextIdx;
+    currentSongRef.current = nextSong;
     loadSong(nextSong, { advanceIndex: nextIdx, direction: 1, autoAdvance: true });
-  }, [queue, currentIndex, isShuffling, repeatMode, loadSong]);
+  }, [isShuffling, loadSong]);
 
   // Previous song
   const previous = useCallback(() => {
-    if (queue.length === 0) return;
+    const activeQueue = queueRef.current;
+    if (activeQueue.length === 0) return;
 
-    debugPlayer('previous', { currentIndex, queueLength: queue.length });
+    debugPlayer('previous', { currentIndex: currentIndexRef.current, queueLength: activeQueue.length });
 
-    let prevIdx = currentIndex - 1;
+    let prevIdx = currentIndexRef.current - 1;
     if (prevIdx < 0) {
-      prevIdx = queue.length - 1; // Loop to end
+      prevIdx = activeQueue.length - 1; // Loop to end
     }
 
-    const prevSong = queue[prevIdx];
+    const prevSong = activeQueue[prevIdx];
     setCurrentIndex(prevIdx);
     setCurrentSong(prevSong);
+    currentIndexRef.current = prevIdx;
+    currentSongRef.current = prevSong;
     loadSong(prevSong, { advanceIndex: prevIdx, direction: -1, autoAdvance: true });
-  }, [queue, currentIndex, loadSong]);
+  }, [loadSong]);
 
   // Toggle shuffle
   const toggleShuffle = useCallback(() => {
@@ -596,8 +666,18 @@ export const MusicPlayerProvider = ({ children }) => {
   }, []);
 
   // Backward compatibility - alias functions
-  const playSongCompat = useCallback((song, songQueue = [], collectionData = null) => {
-    playSong(song, songQueue, 0, collectionData);
+  const playSongCompat = useCallback((song, songQueue = [], startIndexOrCollection = 0, maybeCollection = null) => {
+    let startIndex = 0;
+    let collectionData = null;
+
+    if (typeof startIndexOrCollection === 'number') {
+      startIndex = startIndexOrCollection;
+      collectionData = maybeCollection;
+    } else {
+      collectionData = startIndexOrCollection;
+    }
+
+    playSong(song, songQueue, startIndex, collectionData);
   }, [playSong]);
 
   const pauseSongCompat = pause;
@@ -613,9 +693,12 @@ export const MusicPlayerProvider = ({ children }) => {
 
   // Toggle queue visibility
   const toggleQueue = useCallback(() => {
-    setShowQueue(prev => !prev);
-    debugPlayer('toggleQueue', { showQueue: !showQueue });
-  }, [showQueue]);
+    setShowQueue((prev) => {
+      const next = !prev;
+      debugPlayer('toggleQueue', { showQueue: next });
+      return next;
+    });
+  }, []);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -642,6 +725,7 @@ export const MusicPlayerProvider = ({ children }) => {
     isMuted,
     isShuffling,
     repeatMode,
+    favoriteCollections,
     error,
     sleepTimerMinutes,
     showQueue,
@@ -666,6 +750,8 @@ export const MusicPlayerProvider = ({ children }) => {
     previousSong: previousSongCompat,
     toggleShuffle,
     cycleRepeatMode,
+    isCollectionFavorite,
+    toggleCollectionFavorite,
     startSleepTimer,
     clearSleepTimer,
     toggleQueue,
