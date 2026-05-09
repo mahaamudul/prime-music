@@ -6,6 +6,7 @@ import SidePanel from './SidePanel';
 import DesktopSidebar from './DesktopSidebar';
 import DesktopTopBar from './DesktopTopBar';
 import MiniPlayer from '../Common/MiniPlayer';
+import Queue from '../Common/Queue';
 
 const Layout = ({ children }) => {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -54,6 +55,9 @@ const Layout = ({ children }) => {
 
       {/* Mini Player */}
       <MiniPlayer />
+
+      {/* Queue Panel */}
+      <Queue />
 
       <SidePanel
         open={sidePanelOpen}

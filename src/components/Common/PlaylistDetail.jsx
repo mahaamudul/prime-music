@@ -17,6 +17,10 @@ import {
 import { MusicPlayerContext } from '../../contexts/MusicPlayerContext';
 import MarqueeText from './MarqueeText';
 
+const debugPlaylistDetail = (action, payload = {}) => {
+  console.log('[PlaylistDetail]', action, payload);
+};
+
 const PlaylistDetail = ({ 
   collection, 
   songs, 
@@ -37,6 +41,13 @@ const PlaylistDetail = ({
 
   const handlePlayAllClick = () => {
     if (songs.length === 0) return;
+
+    debugPlaylistDetail('play-all', {
+      collection: collection?.name,
+      songs: songs.length,
+      currentSong: currentSong?.title,
+      isPlaying,
+    });
     
     if (isPlayingAllSongs && isPlaying) {
       pauseSong();
@@ -50,8 +61,42 @@ const PlaylistDetail = ({
   };
 
   const handleSongClick = (song) => {
+    debugPlaylistDetail('song-click', {
+      songId: song?.id,
+      title: song?.title,
+      collection: collection?.name,
+    });
     playSong(song, songs, collection);
     setIsPlayingAllSongs(true);
+  };
+
+  const handleBackClick = () => {
+    debugPlaylistDetail('back', { collection: collection?.name });
+    onBack?.();
+  };
+
+  const handleShuffleClick = () => {
+    debugPlaylistDetail('shuffle-toggle', { from: isDesktopShuffle, to: !isDesktopShuffle, collection: collection?.name });
+    setIsDesktopShuffle((value) => !value);
+  };
+
+  const handleFavoriteClick = () => {
+    debugPlaylistDetail('favorite-toggle', { from: isFavorite, to: !isFavorite, collection: collection?.name });
+    setIsFavorite((value) => !value);
+  };
+
+  const handleMoreClick = () => {
+    debugPlaylistDetail('more', { collection: collection?.name });
+  };
+
+  const handleMobileDownloadClick = (song) => {
+    debugPlaylistDetail('download', { songId: song?.id, title: song?.title });
+  };
+
+  const handleMobileTrackPlayClick = (e, song) => {
+    e.stopPropagation();
+    debugPlaylistDetail('mobile-track-play', { songId: song?.id, title: song?.title });
+    handleSongClick(song);
   };
 
   const formatDuration = (ms) => {
@@ -120,7 +165,7 @@ const PlaylistDetail = ({
     <div className="pb-32 md:pb-40" style={{ backgroundColor: bgColor }}>
       <div className="px-4 md:px-8 pt-4 md:pt-6">
         <button
-          onClick={onBack}
+          onClick={handleBackClick}
           className="inline-flex items-center gap-2 rounded-full bg-black/15 px-3 py-2 text-white transition hover:bg-black/25"
         >
           <ChevronLeft size={22} />
@@ -209,7 +254,7 @@ const PlaylistDetail = ({
               </button>
 
               <button
-                onClick={() => setIsDesktopShuffle((value) => !value)}
+                onClick={handleShuffleClick}
                 className={`inline-flex items-center gap-2 rounded-full border border-white/25 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10 ${
                   isDesktopShuffle ? 'bg-white/15' : 'bg-transparent'
                 }`}
@@ -219,7 +264,7 @@ const PlaylistDetail = ({
               </button>
 
               <button
-                onClick={() => setIsFavorite((value) => !value)}
+                onClick={handleFavoriteClick}
                 className={`inline-flex items-center gap-2 rounded-full border border-white/25 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10 ${
                   isFavorite ? 'bg-white/15' : 'bg-transparent'
                 }`}
@@ -228,7 +273,7 @@ const PlaylistDetail = ({
                 Favorite
               </button>
 
-              <button className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-transparent px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
+              <button onClick={handleMoreClick} className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-transparent px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
                 <MoreVertical size={18} />
                 More
               </button>
@@ -355,7 +400,7 @@ const PlaylistDetail = ({
                         <Download size={16} className="text-white/80" />
                       </button>
 
-                      <button type="button" onClick={(e) => { e.stopPropagation(); handleSongClick(song); }} className={`p-2 rounded-full border border-white/20 flex items-center justify-center ${isCurrentSong ? 'bg-white/10' : ''}`}>
+                      <button type="button" onClick={(e) => handleMobileTrackPlayClick(e, song)} className={`p-2 rounded-full border border-white/20 flex items-center justify-center ${isCurrentSong ? 'bg-white/10' : ''}`}>
                         {isCurrentSong && isSongPlaying ? <Pause size={16} /> : <Play size={16} />}
                       </button>
                     </div>

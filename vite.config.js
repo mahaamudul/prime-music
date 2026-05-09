@@ -28,9 +28,25 @@ const audioProxyPlugin = () => ({
         }
 
         const rangeHeader = req.headers.range
-        const upstreamResponse = await fetch(targetUrl, {
-          headers: rangeHeader ? { Range: rangeHeader } : {},
+        const origin = new URL(targetUrl).origin
+        const upstreamHeaders = {
+          Accept: 'audio/*,*/*;q=0.8',
+        }
+
+        if (rangeHeader) {
+          upstreamHeaders.Range = rangeHeader
+        }
+
+        let upstreamResponse = await fetch(targetUrl, {
+          headers: upstreamHeaders,
         })
+
+        if (upstreamResponse.status === 403 && rangeHeader) {
+          delete upstreamHeaders.Range
+          upstreamResponse = await fetch(targetUrl, {
+            headers: upstreamHeaders,
+          })
+        }
 
         if (!upstreamResponse.ok || !upstreamResponse.body) {
           res.statusCode = upstreamResponse.status || 502

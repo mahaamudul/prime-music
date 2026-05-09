@@ -53,16 +53,27 @@ export default async function handler(req, res) {
       return;
     }
 
-    const upstreamHeaders = {};
+    const upstreamHeaders = {
+      Accept: 'audio/*,*/*;q=0.8',
+    };
     if (req.headers.range) {
       upstreamHeaders.Range = req.headers.range;
     }
 
-    const upstreamResponse = await fetch(parsed.toString(), {
+    let upstreamResponse = await fetch(parsed.toString(), {
       method: req.method,
       headers: upstreamHeaders,
       redirect: 'follow',
     });
+
+    if (upstreamResponse.status === 403 && req.headers.range) {
+      delete upstreamHeaders.Range;
+      upstreamResponse = await fetch(parsed.toString(), {
+        method: req.method,
+        headers: upstreamHeaders,
+        redirect: 'follow',
+      });
+    }
 
     res.status(upstreamResponse.status);
 
