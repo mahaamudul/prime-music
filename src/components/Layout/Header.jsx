@@ -1,7 +1,10 @@
-import React from 'react';
-import { Search, User } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Search, User, X } from 'lucide-react';
 
-const Header = ({ onSearchClick, onProfileClick }) => {
+const Header = ({ searchOpen = false, onSearchClick, onSearchClose, onProfileClick }) => {
+  const inputRef = useRef(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
   const handleProfileOpen = () => {
     if (onProfileClick) {
       onProfileClick();
@@ -10,38 +13,84 @@ const Header = ({ onSearchClick, onProfileClick }) => {
     window.dispatchEvent(new Event('open-side-panel'));
   };
 
+  useEffect(() => {
+    if (searchOpen && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [searchOpen]);
+
+  const handleSearchClick = () => {
+    if (onSearchClick) {
+      onSearchClick();
+    }
+  };
+
+  const handleCloseSearch = () => {
+    setSearchTerm('');
+    if (onSearchClose) {
+      onSearchClose();
+    }
+  };
+
   return (
     <header className="fixed top-0 left-0 right-0 bg-[#020e28] z-40 mx-auto max-w-2xl md:hidden">
-      <div className="flex items-center justify-between px-4 py-3 h-16">
-        <div className="flex items-center gap-3">
-          {/* Profile Icon */}
-          <div className="flex-shrink-0">
-            <button
-              type="button"
-              onClick={handleProfileOpen}
-              onPointerUp={handleProfileOpen}
-              onTouchEnd={handleProfileOpen}
-              className="w-10 h-10 bg-[#1DB954] rounded-full flex items-center justify-center cursor-pointer hover:bg-[#1ed760] transition touch-manipulation"
-            >
-              <User size={24} className="text-black" />
-            </button>
-          </div>
-
-          {/* Logo */}
-          <div>
-            <h1 className="text-white font-bold text-[20px] leading-none">Prime Music</h1>
-          </div>
-        </div>
-
-        {/* Search Icon */}
+      <div className="flex items-center gap-3 px-4 py-3 h-16">
         <div className="flex-shrink-0">
           <button
-            onClick={onSearchClick}
-            className="p-2 hover:bg-[#2A2F3E] rounded-full transition"
+            type="button"
+            onClick={handleProfileOpen}
+            onPointerUp={handleProfileOpen}
+            onTouchEnd={handleProfileOpen}
+            className="w-10 h-10 bg-[#1DB954] rounded-full flex items-center justify-center cursor-pointer hover:bg-[#1ed760] transition touch-manipulation"
           >
-            <Search size={24} className="text-white" />
+            <User size={24} className="text-black" />
           </button>
         </div>
+
+        {!searchOpen ? (
+          <>
+            <div className="flex-1 min-w-0">
+              <h1 className="truncate text-white font-bold text-[20px] leading-none">Prime Music</h1>
+            </div>
+
+            <div className="flex-shrink-0">
+              <button
+                type="button"
+                onClick={handleSearchClick}
+                className="p-2 hover:bg-[#2A2F3E] rounded-full transition"
+                aria-label="Open search"
+              >
+                <Search size={24} className="text-white" />
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="flex flex-1 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2">
+              <Search size={18} className="flex-shrink-0 text-white/65" />
+              <input
+                ref={inputRef}
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search songs, artists, playlists"
+                className="min-w-0 flex-1 bg-transparent text-[15px] text-white placeholder:text-white/45 outline-none"
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck="false"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleCloseSearch}
+              className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full hover:bg-[#2A2F3E] transition"
+              aria-label="Close search"
+            >
+              <X size={22} className="text-white" />
+            </button>
+          </>
+        )}
       </div>
     </header>
   );

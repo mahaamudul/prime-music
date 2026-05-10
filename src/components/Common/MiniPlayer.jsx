@@ -144,9 +144,9 @@ const MiniPlayer = () => {
       {/* Compact mobile player overlay (when playlist is open) */}
       <div className="fixed bottom-20 left-0 right-0 z-50 px-4 md:hidden">
         <div className="mx-auto max-w-2xl rounded-2xl bg-[#020e28]/35 backdrop-blur-xl border border-white/10 px-3 py-2 shadow-[0_18px_40px_rgba(0,0,0,0.25)]">
-          <div className="grid grid-cols-[auto_auto_auto] items-center gap-3">
+          <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2">
             {/* Album thumbnail */}
-            <div className="shrink-0">
+            <div className="justify-self-start shrink-0">
               {currentSong.thumbnail ? (
                 <img src={currentSong.thumbnail} alt={currentSong.title} className="w-10 h-10 rounded object-cover" />
               ) : (
@@ -157,7 +157,7 @@ const MiniPlayer = () => {
             </div>
 
             {/* Playback controls */}
-            <div className="flex items-center justify-center gap-2">
+            <div className="justify-self-center flex items-center justify-center gap-2">
               <button onClick={handlePrevious} className="p-2 text-white/80" title="Previous">
                 <SkipBack size={14} />
               </button>
@@ -176,7 +176,7 @@ const MiniPlayer = () => {
             </div>
 
             {/* Time display */}
-            <div className="text-right">
+            <div className="justify-self-end text-right">
               <p className="text-[11px] text-white/60 whitespace-nowrap">{formatTime(currentTime)} / {formatTime(duration)}</p>
             </div>
           </div>

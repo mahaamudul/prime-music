@@ -216,10 +216,10 @@ const PlaylistDetail = ({
             <p className="mt-4 text-lg font-semibold text-white">{collection?.name}</p>
             <p className="mt-2 text-sm text-white/60">{songCount} songs · {formatDuration(totalDurationMs)}</p>
 
-            <div className="mt-4 flex items-center justify-center gap-8">
+            <div className="mt-4 flex items-center justify-center gap-3">
               <button
                 onClick={handleShuffleClick}
-                className={`w-10 h-10 rounded-full border border-white/30 flex items-center justify-center bg-transparent ${isShuffling ? 'bg-white/10' : ''}`}
+                className={`w-10 h-10 shrink-0 rounded-full border border-white/30 flex items-center justify-center bg-transparent ${isShuffling ? 'bg-white/10' : ''}`}
                 title="Shuffle"
               >
                 <Shuffle size={18} className={isShuffling ? 'text-white' : 'text-white/90'} />
@@ -227,25 +227,17 @@ const PlaylistDetail = ({
 
               <button
                 onClick={handlePlayAllClick}
-                className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500 text-white shadow-lg"
+                className="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-red-500 text-white shadow-lg"
               >
                 {isPlayingAllSongs && isPlaying ? <Pause size={22} /> : <Play size={22} />}
               </button>
 
               <button
                 onClick={handleFavoriteClick}
-                className={`w-10 h-10 rounded-full border border-white/30 flex items-center justify-center bg-transparent ${isFavorite ? 'bg-white/10' : ''}`}
+                className={`w-10 h-10 shrink-0 rounded-full border border-white/30 flex items-center justify-center bg-transparent ${isFavorite ? 'bg-white/10' : ''}`}
                 title="Favorite"
               >
                 <Heart size={18} className={isFavorite ? 'fill-white text-white' : 'text-white/90'} />
-              </button>
-
-              <button
-                onClick={handleMoreClick}
-                className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center bg-transparent"
-                title="More"
-              >
-                <MoreVertical size={18} className="text-white/90" />
               </button>
             </div>
           </div>
