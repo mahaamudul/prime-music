@@ -6,15 +6,27 @@ const BottomNavigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [hidden, setHidden] = React.useState(false);
+  const lastScrollYRef = React.useRef(0);
 
   React.useEffect(() => {
-    const handler = (e) => {
-      const playing = e?.detail?.playing;
-      if (typeof playing === 'boolean') setHidden(!!playing);
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY || 0;
+      const delta = currentScrollY - lastScrollYRef.current;
+
+      if (currentScrollY < 24) {
+        setHidden(true);
+      } else if (delta > 8) {
+        setHidden(false);
+      } else if (delta < -8) {
+        setHidden(true);
+      }
+
+      lastScrollYRef.current = currentScrollY;
     };
 
-    window.addEventListener('player-playing', handler);
-    return () => window.removeEventListener('player-playing', handler);
+    lastScrollYRef.current = window.scrollY || 0;
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const tabs = [
@@ -27,7 +39,7 @@ const BottomNavigation = () => {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <nav className={`fixed left-0 right-0 bg-[#020e28]/35 backdrop-blur-xl mx-auto max-w-2xl md:hidden transition-transform ${hidden ? 'translate-y-full' : 'translate-y-0'}`} style={{ bottom: 0 }}>
+    <nav className={`fixed left-0 right-0 bg-[#020e28]/35 backdrop-blur-xl mx-auto max-w-2xl md:hidden transition-transform duration-200 ${hidden ? 'translate-y-full' : 'translate-y-0'}`} style={{ bottom: 0 }}>
       <div className="flex justify-around items-center h-20">
         {tabs.map((tab) => {
           const Icon = tab.icon;
