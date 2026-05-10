@@ -33,8 +33,8 @@ const Header = ({ searchOpen = false, onSearchClick, onSearchClose, onProfileCli
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 bg-[#020e28] z-40 mx-auto max-w-2xl md:hidden">
-      <div className="flex items-center gap-3 px-4 py-3 h-16">
+    <header className="fixed top-0 left-0 right-0 bg-[#020e28] z-40 mx-auto max-w-2xl md:hidden overflow-hidden">
+      <div className="flex items-center gap-2 px-3 py-2 h-16">
         <div className="flex-shrink-0">
           <button
             type="button"
@@ -66,15 +66,15 @@ const Header = ({ searchOpen = false, onSearchClick, onSearchClose, onProfileCli
           </>
         ) : (
           <>
-            <div className="flex flex-1 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2">
-              <Search size={18} className="flex-shrink-0 text-white/65" />
+            <div className="flex flex-1 items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-1 min-w-0">
+              <Search size={16} className="flex-shrink-0 text-white/65" />
               <input
                 ref={inputRef}
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search songs, artists, playlists"
-                className="min-w-0 flex-1 bg-transparent text-[15px] text-white placeholder:text-white/45 outline-none"
+                placeholder="Search songs..."
+                className="min-w-0 flex-1 bg-transparent text-[13px] text-white placeholder:text-white/45 outline-none"
                 autoComplete="off"
                 autoCorrect="off"
                 spellCheck="false"
@@ -84,10 +84,10 @@ const Header = ({ searchOpen = false, onSearchClick, onSearchClose, onProfileCli
             <button
               type="button"
               onClick={handleCloseSearch}
-              className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full hover:bg-[#2A2F3E] transition"
+              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full hover:bg-[#2A2F3E] transition p-1"
               aria-label="Close search"
             >
-              <X size={22} className="text-white" />
+              <X size={18} className="text-white" />
             </button>
           </>
         )}
