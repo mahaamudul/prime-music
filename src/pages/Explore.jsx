@@ -23,9 +23,9 @@ const Explore = () => {
   const [browseSectionEl, setBrowseSectionEl] = useState(null);
 
   // Configuration
-  const CATEGORY_API_URL = 'http://31.97.110.129:7001/api/vv1/category';
-  const HOME_API_URL = 'http://31.97.110.129:7001/api/vv1/home';
-  const PLAYLIST_DETAIL_API_URL = 'http://31.97.110.129:7001/api/vv1/category/collections/album-playlist-by-id';
+  const CATEGORY_API_URL = '/api/vv1/category';
+  const HOME_API_URL = '/api/vv1/home';
+  const PLAYLIST_DETAIL_API_URL = '/api/vv1/category/collections/album-playlist-by-id';
 
   // Helper to fetch JSON
   const fetchJson = useCallback(async (url, signal) => {

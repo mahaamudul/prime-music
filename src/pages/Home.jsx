@@ -12,7 +12,7 @@ const Home = () => {
   const [homeSections, setHomeSections] = useState([]);
   const [requestState, setRequestState] = useState('loading');
   const [errorMessage, setErrorMessage] = useState('');
-  const HOME_API_URL = 'http://31.97.110.129:7001/api/vv1/home';
+  const HOME_API_URL = '/api/vv1/home';
 
   const fetchJson = async (url, signal) => {
     const response = await fetch(url, { signal });

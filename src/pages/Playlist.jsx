@@ -12,7 +12,7 @@ const Playlist = () => {
   const [playlistLoading, setPlaylistLoading] = useState(false);
   const [playlistError, setPlaylistError] = useState(null);
 
-  const PLAYLIST_DETAIL_API_URL = 'http://31.97.110.129:7001/api/vv1/category/collections/album-playlist-by-id';
+  const PLAYLIST_DETAIL_API_URL = '/api/vv1/category/collections/album-playlist-by-id';
 
   const fetchJson = useCallback(async (url, signal) => {
     const response = await fetch(url, { signal });
