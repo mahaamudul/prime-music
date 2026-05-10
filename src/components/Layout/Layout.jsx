@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Header from './Header';
 import BottomNavigation from './BottomNavigation';
+import SearchModal from '../Common/SearchModal';
 import SidePanel from './SidePanel';
 import DesktopSidebar from './DesktopSidebar';
 import DesktopTopBar from './DesktopTopBar';
@@ -8,7 +9,7 @@ import MiniPlayer from '../Common/MiniPlayer';
 import Queue from '../Common/Queue';
 
 const Layout = ({ children }) => {
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [sidePanelOpen, setSidePanelOpen] = useState(false);
 
   useEffect(() => {
@@ -22,20 +23,18 @@ const Layout = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    document.body.style.overflow = sidePanelOpen ? 'hidden' : '';
+    document.body.style.overflow = sidePanelOpen || searchOpen ? 'hidden' : '';
 
     return () => {
       document.body.style.overflow = '';
     };
-  }, [sidePanelOpen]);
+  }, [sidePanelOpen, searchOpen]);
 
   return (
     <div className="bg-[#020e28] min-h-screen text-white">
       <div className="md:hidden">
         <Header
-          searchOpen={mobileSearchOpen}
-          onSearchClick={() => setMobileSearchOpen(true)}
-          onSearchClose={() => setMobileSearchOpen(false)}
+          onSearchClick={() => setSearchOpen(true)}
           onProfileClick={() => setSidePanelOpen(true)}
         />
       </div>
@@ -65,6 +64,10 @@ const Layout = ({ children }) => {
         onClose={() => setSidePanelOpen(false)}
       />
       
+      {/* Search Modal (mobile only) */}
+      <div className="md:hidden">
+        {searchOpen && <SearchModal onClose={() => setSearchOpen(false)} />}
+      </div>
     </div>
   );
 };
