@@ -14,11 +14,11 @@ const BottomNavigation = () => {
       const delta = currentScrollY - lastScrollYRef.current;
 
       if (currentScrollY < 24) {
-        setHidden(true);
-      } else if (delta > 8) {
         setHidden(false);
-      } else if (delta < -8) {
+      } else if (delta > 8) {
         setHidden(true);
+      } else if (delta < -8) {
+        setHidden(false);
       }
 
       lastScrollYRef.current = currentScrollY;
